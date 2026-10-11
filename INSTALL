@@ -134,6 +134,42 @@ modules can be enforced e.g. by
 All running VMs should be turned off before this.
 
 
+2a-bis. The update.sh shortcut
+------------------------------
+
+The whole workflow described above (build, install, signing for Secure
+Boot and reloading the running modules) can be done with a single command
+using the update.sh script provided in this repository:
+
+  sudo ./update.sh
+
+Run it from the top level directory of a checked out workstation branch.
+What it does:
+
+  - builds vmmon and vmnet for the currently running kernel and installs
+    them (same as "make" and "make install" above, including the vermagic
+    check, stripping and depmod),
+  - on a system with Secure Boot enabled, signs both modules with a local
+    key. The key pair is generated on the first run and stored under
+    /var/lib/vmware-host-modules, readable by root only and never inside
+    the repository, so it survives re-runs and cannot be committed by
+    accident. The key is enrolled into the machine owner key (MOK) list
+    when it is not enrolled yet,
+  - unloads the modules currently loaded in the kernel so that the new
+    ones are used; the vmware-networks service is stopped and started
+    again for this.
+
+Before running the script, close all running virtual machines. It needs
+root privileges and kernel headers for the running kernel (it prints the
+install command when they are missing). On the first run on a Secure Boot
+system, the script asks for a one-time password which you must re-enter
+in the "Perform MOK management" dialog during the next boot to confirm
+the enrollment; after that reboot the signed modules load normally. On a
+system without Secure Boot the signing and enrollment are skipped. After
+a kernel update, reboot into the new kernel first and run the script
+again; it warns you when a newer kernel is installed but not running yet.
+
+
 2b. Build and install modules - replacing the original source tarballs
 ----------------------------------------------------------------------
 
